@@ -1,0 +1,33 @@
+#!/bin/fish
+
+set REMOTE ubuntu@1.2.3.4
+
+rm -rf deploy
+mkdir -p deploy/site
+
+# make sure to put .env file in ~/ on the server!
+cp release2 Caddyfile Dockerfile ca-certificate.crt prometheus.yml docker-compose.yml ./deploy/
+
+cd backend-axum
+cargo build --release
+cp target/release/backend-axum ../deploy/
+
+cp -rf migrations ../deploy/
+
+cd ../frontend-dioxus
+rm -rf target # clean up first, just in case
+# npx -y update-browserslist-db@latest  # because it annoyingly reminds you if you don't do it often
+NODE_ENV=production npx tailwindcss -i ./tailwind_input.css -o ./assets/tailwind.css --minify
+DOMAIN=https://yarb.io RUSTFLAGS="--cfg web_sys_unstable_apis" dx bundle --platform web --release # --ssg
+
+cp -r ./target/dx/frontend-dioxus/release/web/public/* ./assets/robots.txt ../deploy/site/
+
+cd ../
+#cp backend-axum/target/debug/deps/backend_axum-4e5fb1d3faf4b2cb deploy/
+scp -r deploy/* $REMOTE:~/deploy/
+
+for f in $(ls -t ./deploy/migrations/ | tail -n 4)
+  echo "~/pg -f ~/deploy/migrations/$f"
+end
+
+echo "ssh $REMOTE ./deploy/release2"

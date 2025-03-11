@@ -1,0 +1,2 @@
+#!/bin/fish
+RUST_LOG=INFO cargo run --release

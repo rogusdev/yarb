@@ -1,0 +1,41 @@
+#!/bin/fish
+
+docker rm -f postgres-tests
+# host uses port 5433 for postgres tests
+docker run -d --name postgres-tests \
+  -p5433:5432 -v $HOME/postgres-tests:/var/lib/postgresql \
+  -e POSTGRES_PASSWORD=donotusetestpasswordpg \
+  postgres:16.1-alpine
+sleep 2
+
+cd ../backend-axum  # for migrations, and then initial setup
+set -x POSTGRES_CONN postgresql://postgres:donotusetestpasswordpg@localhost:5433
+# psql postgresql://postgres:donotusetestpasswordpg@localhost:5433
+psql $POSTGRES_CONN -f (string join  ' -f ' ./migrations/* | string split -n ' ')
+if test $status -ne 0
+    echo "Failed psql migration"
+    return
+end
+
+# initial_setup also reads $POSTGRES_CONN, and $DOMAIN
+set -x DOMAIN https://$HOSTNAME
+cargo test tests::initial_setup -- --nocapture --exact --ignored
+if test $status -eq 0
+    cd -
+else
+    cd -
+    echo "Failed initial setup"
+    return
+end
+
+# will run its own frontend + backend -- must have those stopped!
+# https://playwright.dev/docs/test-cli
+npx playwright test --workers=1 --project=chromium #--ui
+# need single worker for parallelization not to conflict on db stuff
+# however, if the first project (chromium) fails, subsequent projects will also fail bc db state is bad...
+# time npx playwright test --workers=1
+# npx playwright test --ui  # to open the tests in a browser to execute visually
+docker rm -f postgres-tests
+
+# codegen requires that backend + frontend are already running!
+# npx playwright codegen https://$HOSTNAME --ignore-https-errors

@@ -1,0 +1,22 @@
+[package]
+name = "backend-axum"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+argon2 = { version = "0.5.3", features = ["std"] }
+async-recursion = "1.1.1"
+aws-config = { version = "1.5.18", features = ["behavior-version-latest"] }
+aws-sdk-s3 = "1.78.0"
+axum = "0.8.1"
+chrono = "0.4.40"
+dotenvy = "0.15.7"
+fast32 = { version = "1.0.3", features = ["uuid"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+shared-backfront = { version = "0.1.0", path = "../shared-backfront", features = ["db"] }
+sqlx = { version = "0.8.3", features = ["runtime-tokio", "tls-rustls", "postgres"] }
+tokio = { version = "1.44.0", features = ["macros", "rt-multi-thread", "signal"] }
+tower-sessions = "0.14.0"
+tower-sessions-sqlx-store = { version = "0.15.0", features = ["postgres"] }
+uuid = { version = "1.15.1", features = ["v4", "v7", "serde"] }

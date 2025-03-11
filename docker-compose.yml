@@ -1,0 +1,106 @@
+# https://grafana.com/docs/grafana-cloud/send-data/metrics/metrics-prometheus/prometheus-config-examples/docker-compose-linux/
+# networks:
+#   monitoring:
+#     driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana-storage:
+  caddy_data:
+  caddy_config:
+
+services:
+  backend-axum:
+    # https://docs.docker.com/compose/compose-file/build/#illustrative-example
+    build: ./deploy
+    # image: backend-axum
+    container_name: backend-axum
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      - RUST_LOG=INFO
+      # make sure to put POSTGRES_CONN=... in .env next to this file
+      - POSTGRES_CONN=${POSTGRES_CONN}
+      - B2_BUCKET=${B2_BUCKET}
+      - B2_KEY_ID=${B2_KEY_ID}
+      - B2_SECRET_KEY=${B2_SECRET_KEY}
+      - B2_REGION=${B2_REGION}
+    volumes:
+      # need ssl https://stackoverflow.com/a/41169861/310221
+      - /etc/ssl/certs:/etc/ssl/certs
+      - ./ca-certificate.crt:/opt/ca-certificate.crt
+
+  caddy:
+    # https://hub.docker.com/_/caddy
+    image: caddy
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+      - '2019:2019'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - ./deploy/site:/usr/share/caddy
+      - caddy_data:/data
+      - caddy_config:/config
+      # sudo mkdir /var/log/caddy
+      - /var/log/caddy:/var/log
+
+  # https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+  # https://grafana.com/docs/grafana-cloud/send-data/metrics/metrics-prometheus/prometheus-config-examples/docker-compose-linux/#step-1-create-the-compose-file
+  # https://github.com/vegasbrianc/prometheus/blob/master/docker-compose.yml
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - '9100:9100'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      # https://grafana.com/grafana/dashboards/1860-node-exporter-full/
+      - '--collector.systemd'
+      - '--collector.processes'
+    # networks:
+    #   - monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    # https://stackoverflow.com/questions/24319662/from-inside-of-a-docker-container-how-do-i-connect-to-the-localhost-of-the-mach
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    # networks:
+    #   - monitoring

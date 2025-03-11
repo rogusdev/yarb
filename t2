@@ -1,0 +1,6 @@
+#!/bin/fish
+./c
+cd backend-axum/examples/testing && ./m
+cargo run
+# RUST_BACKTRACE=1 cargo run
+cd -

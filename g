@@ -1,0 +1,3 @@
+#git diff -w -- ':!/backend-axum/Cargo.lock' ':!/backend-axum/examples/testing/Cargo.lock' ':!/frontend-dioxus/Cargo.lock' ':!/frontend-dioxus/package-lock.json' ':!/frontend-dioxus/assets/tailwind.css' ':!/shared-backfront/Cargo.lock'
+git diff -w HEAD -- ':!/backend-axum/Cargo.lock' ':!/backend-axum/examples/testing/Cargo.lock' ':!/frontend-dioxus/Cargo.lock' ':!/frontend-dioxus/package-lock.json' ':!/frontend-dioxus/assets/tailwind.css' ':!/shared-backfront/Cargo.lock'
+#git diff -w HEAD~1 -- ':!/backend-axum/Cargo.lock' ':!/backend-axum/examples/testing/Cargo.lock' ':!/frontend-dioxus/Cargo.lock' ':!/frontend-dioxus/package-lock.json' ':!/frontend-dioxus/assets/tailwind.css' ':!/shared-backfront/Cargo.lock'

@@ -1,0 +1,46 @@
+{
+	# https://caddy.community/t/access-metrics-when-using-dockerized-caddy/16496
+	# https://thedevelopercafe.com/articles/monitoring-caddy-with-prometheus-and-grafana-2f1f869097d8
+	admin :2019
+	# https://caddyserver.com/docs/caddyfile/directives/metrics
+	# or is this automatic from the admin directive?...
+	metrics /metrics
+}
+
+* {
+	# https://caddyserver.com/docs/caddyfile/matchers#named-matchers
+	@blocked_hosts {
+		# somehow was getting spammed like crazy by some hacked site or something (multiple per millisecond... lots of logs!)
+		header Host refusenewshour.com
+	}
+	respond @blocked_hosts "" 200
+}
+
+localhost, yarb.io {
+	encode gzip zstd
+
+	# https://github.com/Malfhas/caddy-grafana?tab=readme-ov-file#logs-activation
+	log {
+		output file /var/log/yarb_api.log {
+			roll_size 100MiB
+			roll_keep 5
+			roll_keep_for 100d
+		}
+		format json
+		level INFO
+	}
+
+	handle_path /api/* {
+		reverse_proxy backend-axum:3000
+	}
+
+	handle {
+		root * /usr/share/caddy
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+www.yarb.io, yarb.net, www.yarb.net {
+	redir https://yarb.io{uri} permanent
+}

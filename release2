@@ -1,0 +1,22 @@
+# cd ~/deploy
+
+# sudo systemctl stop backend-axum
+# sudo cp backend-axum /usr/bin/
+
+# sudo systemctl start backend-axum
+# systemctl | grep backend
+
+# sudo cp Caddyfile /etc/caddy/
+# sudo systemctl reload caddy
+
+# cd site
+# sudo cp -r index.html favicon*.ico *.css assets/ /usr/share/caddy/
+
+# cd ../../
+
+sudo cp ~/deploy/ca-certificate.crt ~/deploy/docker-compose.yml ~/
+
+# there must be a .env file with POSTGRES_CONN in it on host in this dir
+sudo docker compose stop
+sudo docker rm backend-axum
+sudo docker compose up -d --build

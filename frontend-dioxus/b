@@ -1,0 +1,2 @@
+#!/bin/fish
+rm -rf target && DOMAIN=https://$HOSTNAME RUSTFLAGS="--cfg web_sys_unstable_apis" dx bundle --platform web --release
